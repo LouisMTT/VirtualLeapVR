@@ -9,6 +9,8 @@ using UnityEngine.Rendering;
 using System.Threading;
 using System;
 using Unity.VisualScripting;
+using Random = UnityEngine.Random;
+
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -33,6 +35,10 @@ public class PlayerMovement : MonoBehaviour
     public GameObject wallToRun;
     private float wallrunTimer;
     private String wallrunSide;
+
+    //for jump sounds
+    public AudioSource audioSource;
+    public AudioClip[] audioSources;
 
     private bool isGrounded => Physics.OverlapSphere(groundCheck.transform.position, .25f, groundLayer).Length > 0;
 
@@ -122,6 +128,8 @@ public class PlayerMovement : MonoBehaviour
     private void OnJump(InputAction.CallbackContext obj)
     {
         if (!isGrounded) return;
+        audioSource.clip = audioSources[Random.Range(0, 3)];
+        audioSource.Play();
         rb.AddForce(Vector3.up * jumpForce);
     }
 
