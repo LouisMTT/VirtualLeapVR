@@ -25,6 +25,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float wallrunTime = 3f;
     [SerializeField] private float aerialAccel = 0.5f;
     [SerializeField] private float wallrunCooldown = 1f;
+    [SerializeField] private GameObject rightController;
+    [SerializeField] private GameObject leftController;
 
     private Vector2 inputAxis;
     private XROrigin rig;
@@ -35,6 +37,8 @@ public class PlayerMovement : MonoBehaviour
     public GameObject wallToRun;
     private float wallrunTimer;
     private String wallrunSide;
+    private Coroutine wallrunTick;
+    private bool canWallrun;
 
     //for jump sounds
     public AudioSource audioSource;
@@ -54,6 +58,7 @@ public class PlayerMovement : MonoBehaviour
         wallToRun = null;
         wallrunTimer = 0f;
         wallrunSide = "none";
+        canWallrun = true;
     }
 
     // Update is called once per frame
@@ -71,7 +76,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 direction = headYaw * new Vector3(inputAxis.x, 0, inputAxis.y);
 
         // movement on ground/air
-        if (!isWallrunning)
+        if (!isWallrunning && canWallrun)
         {
             if (isGrounded && direction.magnitude != 0 && Mathf.Abs(rb.velocity.magnitude) < maxSpeed)
             {
@@ -94,16 +99,17 @@ public class PlayerMovement : MonoBehaviour
             rb.useGravity = false;
             Debug.Log("Started wallrun on side " + wallrunSide);
             wallrunTimer = 0;
-            StartCoroutine(wallrunTimerTick());
+            wallrunTick = StartCoroutine(wallrunTimerTick());
         }
 
         // wallrun runtime logic
         if (isWallrunning)
         {
+            // stopping wallrun
             if ((wallrunSide.Equals("left") && !wallrunCheckLeft) || (wallrunSide.Equals("right") && !wallrunCheckRight) || wallrunTimer >= wallrunTime)
             {
                 Debug.Log("Exited wallrun");
-                StopCoroutine(wallrunTimerTick());
+                StopCoroutine(wallrunTick);
                 isWallrunning = false;
                 wallrunCheckLeft = false;
                 wallrunCheckRight = false;
@@ -111,6 +117,7 @@ public class PlayerMovement : MonoBehaviour
                 rb.useGravity = true;
                 wallrunSide = "none";
             }
+            // on-going wallrun
             else {
                 float xSpeed = rb.velocity.x;
                 float zSpeed = rb.velocity.z;
@@ -127,23 +134,47 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnJump(InputAction.CallbackContext obj)
     {
-        if (!isGrounded) return;
+        // if player is only in the air, can't jump
+        if (!isGrounded && !isWallrunning) return;
         audioSource.clip = audioSources[Random.Range(0, 3)];
         audioSource.Play();
-        rb.AddForce(Vector3.up * jumpForce);
+
+        // if player is not on a wall, normal jump
+        if (!isWallrunning) rb.AddForce(Vector3.up * jumpForce);
+
+        // otherwise, wallrun jump
+        else
+        {
+            // first sets the direction to jump to (based on the opposite hand's position) and then applies force upwards and that way
+            Vector3 towardsController = new Vector3();
+            if (wallrunSide == "left") towardsController = rightController.transform.position - rb.transform.position;
+            else if (wallrunSide == "right") towardsController = leftController.transform.position - rb.transform.position;
+            else Debug.Log("no wallrun side set but still wallrunning?");
+            rb.AddForce(towardsController * jumpForce / 2);
+            rb.AddForce(Vector3.up * jumpForce / 2);
+            Debug.Log("Jumped off the wall");
+        }
     }
 
+    // used to tick the timer on wallrunning
     private IEnumerator wallrunTimerTick()
     {
-        Debug.Log("Wallrun ticking at " + wallrunTimer);
+        Debug.Log("Started ticking wallrun");
         yield return new WaitForSecondsRealtime(1);
         wallrunTimer += 1;
-        Debug.Log("Wallrun ticking at " + wallrunTimer);
         yield return new WaitForSecondsRealtime(1);
         wallrunTimer += 1;
-        Debug.Log("Wallrun ticking at " + wallrunTimer);
         yield return new WaitForSecondsRealtime(1);
         wallrunTimer += 1;
-        Debug.Log("Wallrun ticking at " + wallrunTimer);
+        Debug.Log("Ended wallrun ticking");
+    }
+
+    private IEnumerator wallrunCooldownTick()
+    {
+        Debug.Log("Started wallrun cooldown timer");
+        canWallrun = false;
+        yield return new WaitForSecondsRealtime(wallrunCooldown);
+        canWallrun = true;
+        Debug.Log("Can wallrun again");
     }
 }
