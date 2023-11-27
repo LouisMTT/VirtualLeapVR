@@ -18,8 +18,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] public LayerMask groundLayer;
     [SerializeField] private float jumpForce = 500f;
     [SerializeField] private InputActionReference jumpActionReference;
+    [SerializeField] private InputActionReference crouchActionReference;
     [SerializeField] private float acceleration = 1f;
-    [SerializeField] private float maxSpeed = 10f;
+    [SerializeField] private float maxSpeed = 40f;
     [SerializeField] private GameObject groundCheck;
     [SerializeField] private float wallAccel = 2f;
     [SerializeField] private float wallrunTime = 3f;
@@ -27,6 +28,14 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float wallrunCooldown = 1f;
     [SerializeField] private GameObject rightController;
     [SerializeField] private GameObject leftController;
+    [SerializeField] private float slideForce = 200f;
+    [SerializeField] private float crouchSpeed = 1f;
+    [SerializeField] private float slideCooldown = 3f;
+    [SerializeField] private float crouchHeight = 1f;
+    [SerializeField] private float crouchCamOffset = 0.8f;
+    [SerializeField] private CapsuleCollider hitbox;
+    [SerializeField] private GameObject cameraOffset;
+    [SerializeField] private float slideSpeedThreshold = 5f;
 
     private Vector2 inputAxis;
     private XROrigin rig;
@@ -39,6 +48,10 @@ public class PlayerMovement : MonoBehaviour
     private String wallrunSide;
     private Coroutine wallrunTick;
     private bool canWallrun;
+    private bool isCrouching;
+    private float defaultCamOffset;
+    private float defaultHitboxHeight;
+    private bool canSlide;
 
     //for jump sounds
     public AudioSource audioSource;
@@ -52,6 +65,8 @@ public class PlayerMovement : MonoBehaviour
         rig = GetComponent<XROrigin>();
         rb = GetComponent<Rigidbody>();
         jumpActionReference.action.performed += OnJump;
+        crouchActionReference.action.started += OnCrouch;
+        crouchActionReference.action.canceled += OnStand;
         wallrunCheckLeft = false;
         wallrunCheckRight = false;
         isWallrunning = false;
@@ -59,6 +74,9 @@ public class PlayerMovement : MonoBehaviour
         wallrunTimer = 0f;
         wallrunSide = "none";
         canWallrun = true;
+        defaultCamOffset = cameraOffset.transform.localPosition.y;
+        defaultHitboxHeight = hitbox.height;
+        canSlide = true;
     }
 
     // Update is called once per frame
@@ -71,12 +89,12 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // head direction calculations
+        // head direction and input direction calculations
         Quaternion headYaw = Quaternion.Euler(0, rig.Camera.transform.eulerAngles.y, 0);
         Vector3 direction = headYaw * new Vector3(inputAxis.x, 0, inputAxis.y);
 
         // movement on ground/air
-        if (!isWallrunning && canWallrun)
+        if (!isWallrunning)
         {
             if (isGrounded && direction.magnitude != 0 && Mathf.Abs(rb.velocity.magnitude) < maxSpeed)
             {
@@ -89,7 +107,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // wallrun initialization logic
-        if (!isGrounded && !isWallrunning && (wallrunCheckLeft || wallrunCheckRight) && wallToRun != null)
+        if (!isGrounded && !isWallrunning && (wallrunCheckLeft || wallrunCheckRight) && wallToRun != null && canWallrun)
         {
             if (wallrunCheckLeft) wallrunSide = "left";
             else if (wallrunCheckRight) wallrunSide = "right";
@@ -156,6 +174,36 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // method that is used to crouch
+    private void OnCrouch(InputAction.CallbackContext obj)
+    {
+        if (!isGrounded) return;
+
+        Debug.Log("Started crouching");
+        isCrouching = true;
+        hitbox.height = crouchHeight;
+        cameraOffset.transform.localPosition = new Vector3(cameraOffset.transform.localPosition.x, -crouchCamOffset, cameraOffset.transform.localPosition.z);
+
+        if (Mathf.Abs(rb.velocity.magnitude) >= slideSpeedThreshold && canSlide)
+        {
+            Debug.Log("Enough speed to slide");
+            canSlide = false;
+            Quaternion headYaw = Quaternion.Euler(0, rig.Camera.transform.eulerAngles.y, 0);
+            Vector3 direction = headYaw * new Vector3(inputAxis.x, 0, inputAxis.y);
+            rb.AddForce(direction * slideForce);
+            StartCoroutine(slideCooldownTick(slideCooldown));
+        }
+    }
+
+    // method that is used to stand up after crouching
+    private void OnStand(InputAction.CallbackContext obj)
+    {
+        Debug.Log("Stopped crouching");
+        isCrouching = false;
+        hitbox.height = defaultHitboxHeight;
+        cameraOffset.transform.localPosition = new Vector3(cameraOffset.transform.localPosition.x, defaultCamOffset, cameraOffset.transform.localPosition.z);
+    }
+
     // used to tick the timer on wallrunning
     private IEnumerator wallrunTimerTick()
     {
@@ -171,10 +219,15 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator wallrunCooldownTick()
     {
-        Debug.Log("Started wallrun cooldown timer");
-        canWallrun = false;
         yield return new WaitForSecondsRealtime(wallrunCooldown);
         canWallrun = true;
         Debug.Log("Can wallrun again");
+    }
+
+    private IEnumerator slideCooldownTick(float cooldown)
+    {
+        yield return new WaitForSecondsRealtime(cooldown);
+        canSlide = true;
+        Debug.Log("Can slide again");
     }
 }
