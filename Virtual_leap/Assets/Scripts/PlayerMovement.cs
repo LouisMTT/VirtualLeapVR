@@ -51,6 +51,7 @@ public class PlayerMovement : MonoBehaviour
     private bool isCrouching;
     private float defaultCamOffset;
     private float defaultHitboxHeight;
+    private float defaultGroundCheckHeight;
     private bool canSlide;
 
     //for jump sounds
@@ -76,6 +77,7 @@ public class PlayerMovement : MonoBehaviour
         canWallrun = true;
         defaultCamOffset = cameraOffset.transform.localPosition.y;
         defaultHitboxHeight = hitbox.height;
+        defaultGroundCheckHeight = groundCheck.transform.localPosition.y;
         canSlide = true;
     }
 
@@ -183,6 +185,7 @@ public class PlayerMovement : MonoBehaviour
         isCrouching = true;
         hitbox.height = crouchHeight;
         cameraOffset.transform.localPosition = new Vector3(cameraOffset.transform.localPosition.x, -crouchCamOffset, cameraOffset.transform.localPosition.z);
+        groundCheck.transform.localPosition = new Vector3(groundCheck.transform.localPosition.x, defaultGroundCheckHeight + (defaultHitboxHeight - crouchHeight) / 2, groundCheck.transform.localPosition.z);
 
         if (Mathf.Abs(rb.velocity.magnitude) >= slideSpeedThreshold && canSlide)
         {
@@ -202,6 +205,7 @@ public class PlayerMovement : MonoBehaviour
         isCrouching = false;
         hitbox.height = defaultHitboxHeight;
         cameraOffset.transform.localPosition = new Vector3(cameraOffset.transform.localPosition.x, defaultCamOffset, cameraOffset.transform.localPosition.z);
+        groundCheck.transform.localPosition = new Vector3(groundCheck.transform.localPosition.x, defaultGroundCheckHeight, groundCheck.transform.localPosition.z);
     }
 
     // used to tick the timer on wallrunning
