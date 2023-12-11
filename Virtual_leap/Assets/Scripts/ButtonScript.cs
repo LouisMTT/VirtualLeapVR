@@ -25,7 +25,7 @@ public class ButtonScript : MonoBehaviour
     //right
     [SerializeField] private Transform doorR;
 
-    private int state;
+    [SerializeField] private int state;
 
     
 
@@ -33,7 +33,6 @@ public class ButtonScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        state = 0;
         startPos = transform.localPosition;
         joint = GetComponent<ConfigurableJoint>();
     }
