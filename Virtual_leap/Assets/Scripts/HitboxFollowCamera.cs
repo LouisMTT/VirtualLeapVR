@@ -21,9 +21,10 @@ public class HitboxFollowCamera : MonoBehaviour
             timer.ChangeStatus(false);
         }
         if(other.tag == "Death"){
-            Debug.Log("before" + player.position);
             player.transform.position = TeleportGoal.transform.position;
-            Debug.Log("after" + player.position);
+        }
+        if(other.tag == "Respawn"){
+            TeleportGoal = other.gameObject.transform;
         }
     }
 
