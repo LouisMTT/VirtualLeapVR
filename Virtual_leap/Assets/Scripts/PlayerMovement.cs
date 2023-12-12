@@ -35,6 +35,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float crouchCamOffset = 0.8f;
     [SerializeField] private CapsuleCollider hitbox;
     [SerializeField] private GameObject cameraOffset;
+    [SerializeField] private BoxCollider triggerHitbox;
     [SerializeField] private float slideSpeedThreshold = 5f;
 
     private Vector2 inputAxis;
@@ -184,6 +185,7 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log("Started crouching");
         isCrouching = true;
         hitbox.height = crouchHeight;
+        triggerHitbox.size = new Vector3(triggerHitbox.size.x, crouchHeight, triggerHitbox.size.z);
         cameraOffset.transform.localPosition = new Vector3(cameraOffset.transform.localPosition.x, -crouchCamOffset, cameraOffset.transform.localPosition.z);
         groundCheck.transform.localPosition = new Vector3(groundCheck.transform.localPosition.x, defaultGroundCheckHeight + (defaultHitboxHeight - crouchHeight) / 2, groundCheck.transform.localPosition.z);
 
@@ -204,6 +206,7 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log("Stopped crouching");
         isCrouching = false;
         hitbox.height = defaultHitboxHeight;
+        triggerHitbox.size = new Vector3(triggerHitbox.size.x, defaultHitboxHeight, triggerHitbox.size.z);
         cameraOffset.transform.localPosition = new Vector3(cameraOffset.transform.localPosition.x, defaultCamOffset, cameraOffset.transform.localPosition.z);
         groundCheck.transform.localPosition = new Vector3(groundCheck.transform.localPosition.x, defaultGroundCheckHeight, groundCheck.transform.localPosition.z);
     }
