@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Wallrun
   - Start
+  - Death
   layers:
   - Default
   - TransparentFX

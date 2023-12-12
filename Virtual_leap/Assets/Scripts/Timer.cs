@@ -30,6 +30,5 @@ public class Timer : MonoBehaviour
     }
     public void ChangeStatus(bool status){
         active = status;
-        Debug.Log(active);
     }
 }
