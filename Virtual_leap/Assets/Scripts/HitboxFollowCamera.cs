@@ -26,6 +26,9 @@ public class HitboxFollowCamera : MonoBehaviour
         if(other.tag == "Respawn"){
             TeleportGoal = other.gameObject.transform;
         }
+        if(other.tag == "Reset"){
+            timer.Reset();
+        }
     }
 
 }

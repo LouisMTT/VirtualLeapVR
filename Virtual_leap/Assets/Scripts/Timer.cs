@@ -31,4 +31,7 @@ public class Timer : MonoBehaviour
     public void ChangeStatus(bool status){
         active = status;
     }
+    public void Reset(){
+        time = 0;
+    }
 }
