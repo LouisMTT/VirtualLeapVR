@@ -11,7 +11,12 @@ public class HitboxFollowCamera : MonoBehaviour
 
     void FixedUpdate()
     {
+        // location
         this.gameObject.transform.position = new Vector3(camera.transform.position.x, this.gameObject.transform.position.y, camera.transform.position.z);
+
+        // rotation
+        this.gameObject.transform.localRotation = new Quaternion(this.gameObject.transform.localRotation.x, camera.transform.localRotation.y, 
+            this.gameObject.transform.localRotation.z, this.gameObject.transform.localRotation.w);
     }
     private void OnTriggerEnter(Collider other){
         if(other.tag == "Start"){
